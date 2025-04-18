@@ -4,109 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SVG Animator</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <h1>SVG Animator</h1>
-    </header>
-    
-    <main>
-        <section class="upload-section">
-            <h2>Upload SVG</h2>
-            <div class="file-drop-area" id="fileDropArea">
-                <p>Drag & drop SVG file here or</p>
-                <input type="file" id="fileInput" accept=".svg">
-                <label for="fileInput" class="upload-btn">Select File</label>
-            </div>
-        </section>
-
-        <section class="animation-container">
-            <div class="animation-preview" id="animationPreview">
-                <!-- SVG will be displayed here -->
-            </div>
-            
-            <div class="control-panel">
-                <div class="animation-controls">
-                    <h2>Animation Controls</h2>
+    <div class="app-container">
+        <header>
+            <h1>SVG Animator</h1>
+            <p class="tagline">Animate & export SVG strokes and paths with ease</p>
+        </header>
+        
+        <main>
+            <div class="toolbox">
+                <div class="upload-section">
+                    <h2><i class="fas fa-upload"></i> Upload SVG</h2>
+                    <input type="file" id="svg-upload" accept=".svg">
+                    <button id="upload-btn">
+                        <i class="fas fa-file-import"></i> Upload
+                    </button>
+                </div>
+                
+                <div class="animation-settings">
+                    <h2><i class="fas fa-sliders"></i> Animation Settings</h2>
                     
-                    <div class="control-group">
-                        <label for="animationType">Animation Type</label>
-                        <select id="animationType">
-                            <option value="path">Path Animation</option>
-                            <option value="stroke">Stroke Animation</option>
+                    <div class="setting-group">
+                        <label for="animation-type">Animation Type:</label>
+                        <select id="animation-type">
+                            <option value="path">By Path</option>
+                            <option value="stroke">By Stroke</option>
                         </select>
                     </div>
                     
-                    <div class="control-group">
-                        <label for="duration">Duration (seconds)</label>
-                        <input type="number" id="duration" min="0.1" step="0.1" value="2">
+                    <div class="setting-group">
+                        <label for="duration">Duration (seconds):</label>
+                        <input type="number" id="duration" min="0.1" step="0.1" value="3">
                     </div>
                     
-                    <div class="control-group">
-                        <label for="delay">Delay (seconds)</label>
+                    <div class="setting-group">
+                        <label for="delay">Delay (seconds):</label>
                         <input type="number" id="delay" min="0" step="0.1" value="0">
                     </div>
                     
-                    <div class="control-group">
-                        <label for="easing">Easing</label>
+                    <div class="setting-group">
+                        <label for="easing">Easing:</label>
                         <select id="easing">
                             <option value="linear">Linear</option>
-                            <option value="easeInOut">Ease In Out</option>
+                            <option value="easeInOut">Ease In/Out</option>
                             <option value="easeIn">Ease In</option>
                             <option value="easeOut">Ease Out</option>
                         </select>
                     </div>
                     
-                    <div class="control-group">
-                        <label for="repeat">Repeat</label>
-                        <input type="number" id="repeat" min="0" value="0">
-                        <span class="hint">(0 = infinite)</span>
+                    <div class="setting-group">
+                        <label for="loop">Loop Animation:</label>
+                        <input type="checkbox" id="loop">
                     </div>
+                    
+                    <div class="setting-group">
+                        <label for="use-original-styles">Use Original SVG Styles:</label>
+                        <input type="checkbox" id="use-original-styles" checked>
+                    </div>
+                    
+                    <div class="setting-group style-control">
+                        <label for="stroke-width">Stroke Width:</label>
+                        <input type="number" id="stroke-width" min="0.1" step="0.1" value="1">
+                    </div>
+                    
+                    <div class="setting-group style-control">
+                        <label for="stroke-color">Stroke Color:</label>
+                        <input type="color" id="stroke-color" value="#000000">
+                    </div>
+                    
+                    <button id="apply-settings-btn">
+                        <i class="fas fa-check"></i> Apply Settings
+                    </button>
                 </div>
                 
-                <div class="export-controls">
-                    <h2>Export Options</h2>
+                <div class="export-settings">
+                    <h2><i class="fas fa-file-export"></i> Export Settings</h2>
                     
-                    <div class="control-group">
-                        <label for="width">Width (px)</label>
-                        <input type="number" id="width" min="1" value="800">
+                    <div class="setting-group">
+                        <label for="fps">FPS:</label>
+                        <input type="number" id="fps" min="1" step="1" value="30">
                     </div>
                     
-                    <div class="control-group">
-                        <label for="height">Height (px)</label>
-                        <input type="number" id="height" min="1" value="600">
+                    <div class="setting-group">
+                        <label for="format">Format:</label>
+                        <select id="format">
+                            <option value="webm">WebM (Transparent)</option>
+                            <option value="mp4">MP4</option>
+                            <option value="gif">GIF (Transparent)</option>
+                        </select>
                     </div>
                     
-                    <div class="control-group">
-                        <label for="fps">FPS</label>
-                        <input type="number" id="fps" min="1" max="60" value="24">
+                    <div class="setting-group">
+                        <label for="quality">Quality:</label>
+                        <input type="range" id="quality" min="1" max="10" value="8">
+                        <span id="quality-value">8</span>
                     </div>
                     
-                    <div class="control-group">
-                        <label for="backgroundColor">Background</label>
-                        <input type="color" id="backgroundColor" value="#ffffff">
-                        <input type="checkbox" id="transparentBg" checked>
-                        <label for="transparentBg">Transparent</label>
+                    <button id="export-btn">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+            
+            <div class="preview-area">
+                <div class="canvas-container">
+                    <div id="svg-container">
+                        <p class="upload-prompt">
+                            <i class="fas fa-file-image fa-3x"></i><br>
+                            Upload an SVG to begin
+                        </p>
+                    </div>
+                    <div id="animation-controls">
+                        <button id="play-btn" disabled>
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                        <button id="pause-btn" disabled>
+                            <i class="fas fa-pause"></i> Pause
+                        </button>
+                        <button id="stop-btn" disabled>
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
                     </div>
                 </div>
             </div>
-        </section>
+        </main>
         
-        <section class="action-buttons">
-            <button id="previewBtn" class="btn primary-btn">Preview Animation</button>
-            <button id="exportBtn" class="btn success-btn" disabled>Export Video</button>
-            <button id="resetBtn" class="btn danger-btn">Reset</button>
-        </section>
-    </main>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.1.2/svg.min.js"></script>
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
-    <script src="https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js"></script>
-    <script>
-        // Create global FFmpeg reference
-        const { createFFmpeg } = FFmpeg;
-    </script>
-    <script src="app.js"></script>
+        <div class="modal" id="export-modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2><i class="fas fa-cog fa-spin"></i> Exporting Animation</h2>
+                <div class="progress-container">
+                    <div class="progress-bar"></div>
+                </div>
+                <p id="export-status">Preparing export...</p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>SVG Animator • Created with <i class="fas fa-heart"></i> by Owen Van Vooren</p>
+        </footer>
+    </div>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.3/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/ffmpeg.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Application Script -->
+    <script src="script.js"></script>
 </body>
 </html>
