@@ -25,6 +25,10 @@ const closeBtn = document.querySelector('.close-btn');
 const progressBar = document.querySelector('.progress-bar');
 const exportStatus = document.getElementById('export-status');
 const uploadPrompt = document.querySelector('.upload-prompt');
+const resolutionPreset = document.getElementById('resolution-preset');
+const exportWidth = document.getElementById('export-width');
+const exportHeight = document.getElementById('export-height');
+const maintainAspectRatio = document.getElementById('maintain-aspect-ratio');
 
 // State variables
 let originalSvgContent = null;
@@ -41,11 +45,17 @@ let userModifiedStyles = {
     stroke: false,
     strokeWidth: false
 };
+let originalWidth = 800;
+let originalHeight = 600;
+let aspectRatio = originalWidth / originalHeight;
 
 // Initialize the application
 function init() {
     setupEventListeners();
     disableControls();
+    
+    // Initialize resolution controls
+    initializeResolutionControls();
     
     // Initially set style controls based on the useOriginalStyles checkbox
     toggleStyleControls();
@@ -96,6 +106,22 @@ function setupEventListeners() {
     
     // Toggle original styles
     useOriginalStyles.addEventListener('change', toggleStyleControls);
+    
+    // Resolution preset change
+    resolutionPreset.addEventListener('change', handleResolutionPresetChange);
+    
+    // Width/height change with aspect ratio maintenance
+    exportWidth.addEventListener('input', function() {
+        if (maintainAspectRatio.checked) {
+            exportHeight.value = Math.round(exportWidth.value / aspectRatio);
+        }
+    });
+    
+    exportHeight.addEventListener('input', function() {
+        if (maintainAspectRatio.checked) {
+            exportWidth.value = Math.round(exportHeight.value * aspectRatio);
+        }
+    });
 }
 
 // Toggle style controls based on useOriginalStyles checkbox
@@ -199,6 +225,9 @@ function handleSvgUpload() {
         // Prepare SVG for animation
         prepareSvgForAnimation();
         enableControls();
+        
+        // Extract SVG dimensions to set original width/height
+        updateOriginalDimensions();
     };
     
     reader.readAsText(file);
@@ -523,6 +552,12 @@ function startExport() {
     recordedChunks = [];
     exportedFrames = [];
     
+    // Make sure we have an animation before exporting
+    if (!animation) {
+        // Create the animation with current settings
+        applyAnimationSettings();
+    }
+    
     // Start capturing frames
     captureFrames(fps, format, quality);
 }
@@ -587,12 +622,28 @@ function captureFrame() {
                 svgClone.setAttribute(attr.name, attr.value);
             });
             
-            // Ensure viewBox is set
-            if (!svgClone.getAttribute('viewBox') && (svgClone.getAttribute('width') && svgClone.getAttribute('height'))) {
-                const width = svgClone.getAttribute('width');
-                const height = svgClone.getAttribute('height');
-                svgClone.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            // Get target dimensions from export settings
+            const targetWidth = parseInt(exportWidth.value) || 800;
+            const targetHeight = parseInt(exportHeight.value) || 600;
+            
+            // Set explicit width and height on the SVG for proper rendering
+            svgClone.setAttribute('width', targetWidth);
+            svgClone.setAttribute('height', targetHeight);
+            
+            // Handle viewBox to ensure content fits properly
+            let viewBoxValue;
+            const originalViewBox = svgContent.getAttribute('viewBox');
+            
+            if (originalViewBox) {
+                viewBoxValue = originalViewBox;
+            } else {
+                viewBoxValue = `0 0 ${originalWidth} ${originalHeight}`;
             }
+            
+            svgClone.setAttribute('viewBox', viewBoxValue);
+            
+            // Critical: Set preserveAspectRatio to ensure content fits entirely within the frame
+            svgClone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
             
             // Extract all styles from the document
             let styleText = '';
@@ -658,13 +709,18 @@ function captureFrame() {
             }
             
             // Create a complete SVG document with XML declaration
+            // IMPORTANT: Use standalone SVG structure with proper viewBox and preserveAspectRatio
             const serializer = new XMLSerializer();
-            const svgData = serializer.serializeToString(svgClone);
+            let svgData = serializer.serializeToString(svgClone);
             
-            // Ensure proper XML structure with all necessary namespaces
+            // Strip out any duplicate SVG elements that might be nested
+            if (svgData.includes('<svg')) {
+                svgData = svgData.replace(/<svg[^>]*>/, '').replace('</svg>', '');
+            }
+            
             const completeSVGDoc = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1">${svgData}</svg>`;
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="${targetWidth}" height="${targetHeight}" viewBox="${viewBoxValue}" preserveAspectRatio="xMidYMid meet">${svgData}</svg>`;
             
             const svgBlob = new Blob([completeSVGDoc], { type: 'image/svg+xml;charset=utf-8' });
             const URL = window.URL || window.webkitURL || window;
@@ -678,12 +734,14 @@ function captureFrame() {
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
                 
-                // Set canvas size to match SVG
-                canvas.width = image.width || 800;
-                canvas.height = image.height || 600;
+                // Set canvas size based on export settings
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
                 
                 // Draw with transparent background
                 context.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw the image scaled to fit within the canvas dimensions
                 context.drawImage(image, 0, 0, canvas.width, canvas.height);
                 
                 // Get frame data
@@ -711,6 +769,10 @@ function captureFrame() {
 function encodeVideo(fps, format, quality) {
     progressBar.style.width = '50%';
     exportStatus.textContent = 'Processing frames...';
+    
+    // Get resolution values
+    const width = parseInt(exportWidth.value) || 800;
+    const height = parseInt(exportHeight.value) || 600;
     
     // Create a zip file for the frames if not using ffmpeg
     if (!ffmpegLoaded || !ffmpeg) {
@@ -746,12 +808,16 @@ function encodeVideo(fps, format, quality) {
             let outputFileName;
             let ffmpegCommand;
             
+            // Resolution flag
+            const resolutionFlag = `-s ${width}x${height}`;
+            
             switch (format) {
                 case 'webm':
                     outputFileName = 'output.webm';
                     ffmpegCommand = [
                         '-framerate', `${fps}`,
                         '-i', 'frame_%06d.png',
+                        resolutionFlag,
                         '-c:v', 'libvpx-vp9',
                         '-pix_fmt', 'yuva420p',
                         '-metadata:s:v:0', 'alpha_mode=1',
@@ -766,6 +832,7 @@ function encodeVideo(fps, format, quality) {
                     ffmpegCommand = [
                         '-framerate', `${fps}`,
                         '-i', 'frame_%06d.png',
+                        resolutionFlag,
                         '-c:v', 'libx264',
                         '-pix_fmt', 'yuv420p',
                         '-crf', `${Math.round(23 - quality)}`,
@@ -777,6 +844,7 @@ function encodeVideo(fps, format, quality) {
                     ffmpegCommand = [
                         '-framerate', `${fps}`,
                         '-i', 'frame_%06d.png',
+                        resolutionFlag,
                         '-vf', 'split[s0][s1];[s0]palettegen=reserve_transparent=1[p];[s1][p]paletteuse',
                         outputFileName
                     ];
@@ -786,6 +854,7 @@ function encodeVideo(fps, format, quality) {
                     ffmpegCommand = [
                         '-framerate', `${fps}`,
                         '-i', 'frame_%06d.png',
+                        resolutionFlag,
                         '-c:v', 'libvpx-vp9',
                         '-pix_fmt', 'yuva420p',
                         '-metadata:s:v:0', 'alpha_mode=1',
@@ -814,7 +883,7 @@ function encodeVideo(fps, format, quality) {
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = `svg-animation.${format}`;
+            a.download = `svg-animation-${width}x${height}.${format}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -856,13 +925,22 @@ function saveFramesToZip(fps, format, quality) {
     if (window.JSZip) {
         const zip = new JSZip();
         
+        // Get resolution values
+        const width = parseInt(exportWidth.value) || 800;
+        const height = parseInt(exportHeight.value) || 600;
+        
         // Add metadata file with animation info
         const metadata = {
             fps: fps,
             format: format,
             quality: quality,
             duration: parseFloat(durationInput.value),
-            frameCount: exportedFrames.length
+            frameCount: exportedFrames.length,
+            resolution: {
+                width: width,
+                height: height,
+                preset: resolutionPreset.value
+            }
         };
         
         zip.file("metadata.json", JSON.stringify(metadata, null, 2));
@@ -883,7 +961,7 @@ function saveFramesToZip(fps, format, quality) {
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'svg-animation-frames.zip';
+            a.download = `svg-animation-${width}x${height}.zip`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -914,9 +992,13 @@ function downloadSampleFrame() {
     const frameBlob = exportedFrames[0];
     const url = URL.createObjectURL(frameBlob);
     
+    // Get resolution values for filename
+    const width = parseInt(exportWidth.value) || 800;
+    const height = parseInt(exportHeight.value) || 600;
+    
     const a = document.createElement('a');
     a.href = url;
-    a.download = `svg-animation-sample.png`;
+    a.download = `svg-animation-${width}x${height}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -975,6 +1057,92 @@ function disableControls() {
     document.querySelectorAll('#animation-controls button').forEach(element => {
         element.setAttribute('disabled', 'disabled');
     });
+}
+
+// Add this function to handle resolution preset changes
+function handleResolutionPresetChange() {
+    const preset = resolutionPreset.value;
+    
+    // Enable/disable custom dimensions
+    const disableCustomDimensions = preset !== 'custom';
+    exportWidth.disabled = disableCustomDimensions;
+    exportHeight.disabled = disableCustomDimensions;
+    maintainAspectRatio.disabled = disableCustomDimensions;
+    
+    // Set dimensions based on preset
+    switch (preset) {
+        case 'original':
+            exportWidth.value = originalWidth;
+            exportHeight.value = originalHeight;
+            break;
+        case 'hd':
+            exportWidth.value = 1280;
+            exportHeight.value = 720;
+            break;
+        case 'fullhd':
+            exportWidth.value = 1920;
+            exportHeight.value = 1080;
+            break;
+        case '4k':
+            exportWidth.value = 3840;
+            exportHeight.value = 2160;
+            break;
+        case 'custom':
+            // Keep current values
+            break;
+    }
+}
+
+// Add this function to update original dimensions
+function updateOriginalDimensions() {
+    if (!svgContent) return;
+    
+    // Try to get dimensions from viewBox, width/height attributes
+    let width = 800;
+    let height = 600;
+    
+    const viewBox = svgContent.getAttribute('viewBox');
+    if (viewBox) {
+        const viewBoxValues = viewBox.split(' ');
+        if (viewBoxValues.length >= 4) {
+            width = parseFloat(viewBoxValues[2]);
+            height = parseFloat(viewBoxValues[3]);
+        }
+    } else {
+        // Try width/height attributes
+        const svgWidth = svgContent.getAttribute('width');
+        const svgHeight = svgContent.getAttribute('height');
+        
+        if (svgWidth && svgHeight) {
+            // Remove any units (px, em, etc.)
+            width = parseFloat(svgWidth.replace(/[^0-9.]/g, ''));
+            height = parseFloat(svgHeight.replace(/[^0-9.]/g, ''));
+        }
+    }
+    
+    // Update global variables
+    originalWidth = Math.round(width) || 800;
+    originalHeight = Math.round(height) || 600;
+    aspectRatio = originalWidth / originalHeight;
+    
+    // Update UI
+    if (resolutionPreset.value === 'original') {
+        exportWidth.value = originalWidth;
+        exportHeight.value = originalHeight;
+    }
+}
+
+// Call this during init to set initial state
+function initializeResolutionControls() {
+    // Initialize with the preset constraints
+    handleResolutionPresetChange();
+    
+    // Disable custom inputs initially if preset is not "custom"
+    if (resolutionPreset.value !== 'custom') {
+        exportWidth.disabled = true;
+        exportHeight.disabled = true;
+        maintainAspectRatio.disabled = true;
+    }
 }
 
 // Initialize the application when DOM is ready

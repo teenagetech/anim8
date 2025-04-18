@@ -108,6 +108,37 @@
                         <span id="quality-value">8</span>
                     </div>
                     
+                    <div class="resolution-controls">
+                        <h3>Resolution</h3>
+                        <div class="setting-group">
+                            <label for="resolution-preset">Preset:</label>
+                            <select id="resolution-preset">
+                                <option value="original">Original Size</option>
+                                <option value="custom">Custom</option>
+                                <option value="hd">HD (1280×720)</option>
+                                <option value="fullhd">Full HD (1920×1080)</option>
+                                <option value="4k">4K (3840×2160)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="dimension-controls">
+                            <div class="setting-group width-control">
+                                <label for="export-width">Width:</label>
+                                <input type="number" id="export-width" min="1" step="1" value="800">
+                            </div>
+                            
+                            <div class="setting-group height-control">
+                                <label for="export-height">Height:</label>
+                                <input type="number" id="export-height" min="1" step="1" value="600">
+                            </div>
+                        </div>
+                        
+                        <div class="setting-group maintain-aspect-ratio">
+                            <label for="maintain-aspect-ratio">Maintain Aspect Ratio:</label>
+                            <input type="checkbox" id="maintain-aspect-ratio" checked>
+                        </div>
+                    </div>
+                    
                     <button id="export-btn">
                         <i class="fas fa-download"></i> Export
                     </button>
@@ -147,10 +178,6 @@
                 <p id="export-status">Preparing export...</p>
             </div>
         </div>
-        
-        <footer>
-            <p>SVG Animator • Created with <i class="fas fa-heart"></i> by Owen Van Vooren</p>
-        </footer>
     </div>
     
     <!-- Libraries -->

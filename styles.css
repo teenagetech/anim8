@@ -76,6 +76,15 @@ h2 {
     gap: 8px;
 }
 
+h3 {
+    color: var(--text-color);
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+}
+
 h2 i {
     font-size: 0.9em;
     opacity: 0.9;
@@ -182,6 +191,30 @@ input[type="checkbox"] {
     margin-top: 6px;
     accent-color: var(--primary-color);
     cursor: pointer;
+}
+
+/* Resolution controls */
+.resolution-controls {
+    background-color: #fafbff;
+    padding: 16px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    margin-bottom: 16px;
+}
+
+.dimension-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.width-control, .height-control {
+    margin-bottom: 8px;
+}
+
+.maintain-aspect-ratio {
+    margin-top: 4px;
 }
 
 /* Toggle for original styles */
