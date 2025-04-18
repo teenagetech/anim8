@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Animator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>SVG Animator</h1>
+    </header>
+    
+    <main>
+        <section class="upload-section">
+            <h2>Upload SVG</h2>
+            <div class="file-drop-area" id="fileDropArea">
+                <p>Drag & drop SVG file here or</p>
+                <input type="file" id="fileInput" accept=".svg">
+                <label for="fileInput" class="upload-btn">Select File</label>
+            </div>
+        </section>
+
+        <section class="animation-container">
+            <div class="animation-preview" id="animationPreview">
+                <!-- SVG will be displayed here -->
+            </div>
+            
+            <div class="control-panel">
+                <div class="animation-controls">
+                    <h2>Animation Controls</h2>
+                    
+                    <div class="control-group">
+                        <label for="animationType">Animation Type</label>
+                        <select id="animationType">
+                            <option value="path">Path Animation</option>
+                            <option value="stroke">Stroke Animation</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="duration">Duration (seconds)</label>
+                        <input type="number" id="duration" min="0.1" step="0.1" value="2">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="delay">Delay (seconds)</label>
+                        <input type="number" id="delay" min="0" step="0.1" value="0">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="easing">Easing</label>
+                        <select id="easing">
+                            <option value="linear">Linear</option>
+                            <option value="easeInOut">Ease In Out</option>
+                            <option value="easeIn">Ease In</option>
+                            <option value="easeOut">Ease Out</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="repeat">Repeat</label>
+                        <input type="number" id="repeat" min="0" value="0">
+                        <span class="hint">(0 = infinite)</span>
+                    </div>
+                </div>
+                
+                <div class="export-controls">
+                    <h2>Export Options</h2>
+                    
+                    <div class="control-group">
+                        <label for="width">Width (px)</label>
+                        <input type="number" id="width" min="1" value="800">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="height">Height (px)</label>
+                        <input type="number" id="height" min="1" value="600">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="fps">FPS</label>
+                        <input type="number" id="fps" min="1" max="60" value="24">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="backgroundColor">Background</label>
+                        <input type="color" id="backgroundColor" value="#ffffff">
+                        <input type="checkbox" id="transparentBg" checked>
+                        <label for="transparentBg">Transparent</label>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="action-buttons">
+            <button id="previewBtn" class="btn primary-btn">Preview Animation</button>
+            <button id="exportBtn" class="btn success-btn" disabled>Export Video</button>
+            <button id="resetBtn" class="btn danger-btn">Reset</button>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.1.2/svg.min.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js"></script>
+    <script>
+        // Create global FFmpeg reference
+        const { createFFmpeg } = FFmpeg;
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
